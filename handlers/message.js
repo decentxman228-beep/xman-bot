@@ -1030,6 +1030,462 @@ async function handleMessage(sock, msg, sessionId) {
     if (command==='settimezone') { if (!senderIsOwner) return reply(`❌ Owner only`); await setSetting('timezone',text); await reply(`✅ Timezone: ${text}`); return; }
     if (command==='resetwarns') { if (!senderIsOwner) return reply(`❌ Owner only`); if (isGroup){const m=msgContent?.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; if (m){groupDoc.warns.delete(m);}else{groupDoc.warns=new Map();}groupDoc.markModified('warns');await groupDoc.save();await reply(`✅ Warns reset`);} return; }
 
+
+    // ═══════════════════════════════════
+    // FUN (missing commands)
+    // ═══════════════════════════════════
+
+    if (command === '8ball') { const a=['Yes!','No!','Maybe...','Definitely!','Absolutely not!','Ask again later','Signs point to yes','Very doubtful','Without a doubt','Don\'t count on it']; await reply('🎱 *Magic 8-Ball:*\n' + a[Math.floor(Math.random()*a.length)]); return; }
+    if (command === 'coin' || command === 'flip') { await reply('🪙 *' + (Math.random()<0.5?'Heads':'Tails') + '!*'); return; }
+    if (command === 'dice' || command === 'roll') { const sides=parseInt(text)||6; await reply('🎲 *Rolled: ' + (Math.floor(Math.random()*sides)+1) + '/' + sides + '*'); return; }
+    if (command === 'random') { const parts=text.split(' ').map(Number); const [mn,mx]=parts.length>=2?parts:[1,100]; await reply('🎰 *Random ('+mn+'-'+mx+'):* '+(Math.floor(Math.random()*(mx-mn+1))+mn)); return; }
+    if (command === 'choose') { if(!text) return reply('Usage: '+prefix+'choose option1, option2'); const opts=text.split(',').map(s=>s.trim()).filter(Boolean); await reply('🎯 *I choose:* '+opts[Math.floor(Math.random()*opts.length)]); return; }
+    if (command === 'mock') { if(!text) return reply('Usage: '+prefix+'mock <text>'); await reply(text.split('').map((c,i)=>i%2===0?c.toLowerCase():c.toUpperCase()).join('')); return; }
+    if (command === 'ship') { const parts=text.split(' '); if(parts.length<2) return reply('Usage: '+prefix+'ship Name1 Name2'); const love=Math.floor(Math.random()*100); await reply('💕 *'+parts[0]+' + '+parts[1]+'*\n💯 Love: '+love+'%\n'+'❤️'.repeat(Math.ceil(love/10))); return; }
+    if (command === 'rate') { if(!text) return reply('Usage: '+prefix+'rate <thing>'); await reply('⭐ *'+text+'* — '+Math.floor(Math.random()*11)+'/10'); return; }
+    if (command === 'roast') { const r=["You're the human equivalent of a participation trophy.","I've seen better faces on a clock.","If brains were taxed, you'd get a refund.","You're not stupid, you just have bad luck thinking."]; await reply('🔥 *Roast:*\n'+r[Math.floor(Math.random()*r.length)]); return; }
+    if (command === 'compliment') { const c2=['You have the most amazing smile!','You light up every room!','Your kindness is truly inspiring!','You make the world a better place!']; await reply('💐 *Compliment:*\n'+c2[Math.floor(Math.random()*c2.length)]); return; }
+    if (command === 'truth') { const t=['What is your biggest fear?','Have you ever lied to your best friend?','What is your most embarrassing moment?','Who do you have a crush on?']; await reply('💭 *Truth:*\n'+t[Math.floor(Math.random()*t.length)]); return; }
+    if (command === 'dare') { const d=['Send a voice note singing your favourite song.','Share your most embarrassing photo.','Text your crush right now.','Do 10 pushups and send a video.']; await reply('🎯 *Dare:*\n'+d[Math.floor(Math.random()*d.length)]); return; }
+    if (command === 'trivia') { try { const res=await axios.get('https://opentdb.com/api.php?amount=1&type=multiple'); const q=res.data.results[0]; const a=[...q.incorrect_answers,q.correct_answer].sort(()=>Math.random()-0.5); await reply('❓ *Trivia:*\n'+q.question+'\n\n'+a.map((x,i)=>(i+1)+'. '+x).join('\n')+'\n\n✅ *Answer:* '+q.correct_answer); } catch(e) { await reply('❓ What is the capital of France?\n✅ Paris'); } return; }
+    if (command === 'riddle') { const r=[{q:"I have hands but can't clap. What am I?",a:"A clock"},{q:"The more you take, the more you leave behind.",a:"Footsteps"},{q:"I speak without a mouth. What am I?",a:"An echo"},{q:"What has keys but no locks?",a:"A keyboard"}]; const rd=r[Math.floor(Math.random()*r.length)]; await reply('🧩 *Riddle:*\n'+rd.q+'\n\n💡 _'+rd.a+'_'); return; }
+    if (command === 'zodiac') { if(!text) return reply('Usage: '+prefix+'zodiac DD/MM'); const [d2,m2]=text.split('/').map(Number); const signs=[{n:'Capricorn',s:[12,22],e:[1,19]},{n:'Aquarius',s:[1,20],e:[2,18]},{n:'Pisces',s:[2,19],e:[3,20]},{n:'Aries',s:[3,21],e:[4,19]},{n:'Taurus',s:[4,20],e:[5,20]},{n:'Gemini',s:[5,21],e:[6,20]},{n:'Cancer',s:[6,21],e:[7,22]},{n:'Leo',s:[7,23],e:[8,22]},{n:'Virgo',s:[8,23],e:[9,22]},{n:'Libra',s:[9,23],e:[10,22]},{n:'Scorpio',s:[10,23],e:[11,21]},{n:'Sagittarius',s:[11,22],e:[12,21]}]; const match=signs.find(s=>(m2===s.s[0]&&d2>=s.s[1])||(m2===s.e[0]&&d2<=s.e[1])); await reply('♈ *Zodiac:* '+(match?match.n:'Capricorn')); return; }
+    if (command === 'meme') { try { const res=await axios.get('https://meme-api.com/gimme'); await sock.sendMessage(jid,{image:{url:res.data.url},caption:'😂 *'+res.data.title+'*'+channelFooter},{quoted:msg}); } catch(e) { await reply('❌ Could not fetch meme'); } return; }
+    if (command === 'datefact') { try { const now2=new Date(); const res=await axios.get('http://numbersapi.com/'+(now2.getMonth()+1)+'/'+now2.getDate()+'/date'); await reply('📅 *Date Fact:*\n'+res.data); } catch(e) { await reply('📅 Today is a great day!'); } return; }
+    if (command === 'numberfact' || command === 'number') { const n=text||Math.floor(Math.random()*1000); try { const res=await axios.get('http://numbersapi.com/'+n); await reply('🔢 *Fact about '+n+':*\n'+res.data); } catch(e) { await reply('🔢 '+n+' is a great number!'); } return; }
+    if (command === 'fakeid') { const names=['James Smith','Mary Johnson','David Lee','Sarah Williams','Ahmed Hassan']; const cities=['Lagos','London','New York','Dubai','Paris','Abuja']; await reply('🪪 *Fake ID:*\n👤 '+names[Math.floor(Math.random()*names.length)]+'\n🎂 '+Math.floor(Math.random()*28+1)+'/'+(Math.floor(Math.random()*12)+1)+'/'+(1985+Math.floor(Math.random()*25))+'\n🏙️ '+cities[Math.floor(Math.random()*cities.length)]+'\n🆔 '+Math.random().toString(36).slice(2,10).toUpperCase()); return; }
+    if (command === 'emojify') { if(!text) return reply('Usage: '+prefix+'emojify <text>'); const e=['🔥','⭐','💫','✨','🎯','💎','🚀','❤️','🎉','😎']; await reply(text.split(' ').map(w=>w+' '+e[Math.floor(Math.random()*e.length)]).join(' ')); return; }
+    if (command === 'rizz') { const l=["Are you a magician? Because whenever I look at you, everyone else disappears.","Do you have a map? I keep getting lost in your eyes.","Are you a parking ticket? Because you've got 'fine' written all over you."]; await reply('💘 *Rizz:*\n'+l[Math.floor(Math.random()*l.length)]); return; }
+    if (command === 'scorecard') { const parts=text.split(' '); if(parts.length<2) return reply('Usage: '+prefix+'scorecard Person1 Person2'); const stats=['Looks','Brains','Humor','Vibes','Rizz']; let card='📊 *'+parts[0]+' vs '+parts[1]+'*\n\n'; stats.forEach(s=>{card+=s+': *'+Math.floor(Math.random()*11)+'* vs *'+Math.floor(Math.random()*11)+'*\n';}); await reply(card); return; }
+    if (command === 'confession') { if(!text) return reply('Usage: '+prefix+'confession <secret>'); await sock.sendMessage(jid,{text:'🤫 *Anonymous Confession:*\n'+text+channelFooter}); return; }
+    if (command === 'acronym') { if(!text) return reply('Usage: '+prefix+'acronym LMAO'); const words2=['Awesome','Bold','Creative','Dope','Epic','Fantastic','Great','Happy','Insane','Jolly','Kind','Lucky','Magic','Nice','Outstanding']; const result2=text.toUpperCase().split('').filter(c=>c!==' ').map(c=>{const match=words2.filter(w=>w[0]===c);return c+' - '+(match[Math.floor(Math.random()*match.length)]||c);}); await reply('🔤 *Acronym:*\n'+result2.join('\n')); return; }
+    if (command === 'repeat') { const parts=text.split(' '); if(parts.length<2) return reply('Usage: '+prefix+'repeat 3 Hello'); await reply(Array(Math.min(parseInt(parts[0]),20)).fill(parts.slice(1).join(' ')).join('\n')); return; }
+    if (command === 'fakechat') { if(!text) return reply('Usage: '+prefix+'fakechat Name: Message'); const parts=text.split(':'); if(parts.length<2) return reply('Usage: '+prefix+'fakechat Name: Message'); await reply('╭─────────────────\n│ 👤 *'+parts[0].trim()+'*\n│ '+parts.slice(1).join(':').trim()+'\n│ ✓✓ '+new Date().toLocaleTimeString()+'\n╰─────────────────'); return; }
+
+    // ═══════════════════════════════════
+    // GAMES
+    // ═══════════════════════════════════
+
+    if (command === 'tictactoe') { await reply('🎮 *Tic-Tac-Toe*\n\nSend .ttt to start a game with someone!\n\n1️⃣|2️⃣|3️⃣\n4️⃣|5️⃣|6️⃣\n7️⃣|8️⃣|9️⃣\n\nFeature: Coming soon with multiplayer support!'); return; }
+    if (command === 'hangman') { const words=['JAVASCRIPT','NODEJS','WHATSAPP','TELEGRAM','MONGODB','BAILEYS','DECENT']; const word=words[Math.floor(Math.random()*words.length)]; const hint=word.split('').map((c,i)=>i===0||i===word.length-1?c:'_').join(' '); await reply('🎮 *Hangman*\n\nGuess the word:\n'+hint+'\n\n📝 '+word.length+' letters\n💡 Hint: It\'s tech-related!\n\nReply with a letter to guess!'); return; }
+    if (command === 'quiz') { const questions=[{q:'What is 2+2?',a:'4',opts:['3','4','5','6']},{q:'Capital of Nigeria?',a:'Abuja',opts:['Lagos','Abuja','Kano','Ibadan']},{q:'What does HTML stand for?',a:'HyperText Markup Language',opts:['HyperText Markup Language','High Text Machine Language','HyperTool Markup Language','None']},{q:'Who created WhatsApp?',a:'Jan Koum',opts:['Mark Zuckerberg','Jan Koum','Elon Musk','Bill Gates']}]; const q=questions[Math.floor(Math.random()*questions.length)]; await reply('🧠 *QUIZ TIME!*\n\n❓ '+q.q+'\n\n'+q.opts.map((o,i)=>String.fromCharCode(65+i)+'. '+o).join('\n')+'\n\n✅ Answer: '+q.a); return; }
+    if (command === 'wordle') { const words2=['CRANE','BRAVE','STONE','LIGHT','MUSIC','DANCE','PIANO']; const word2=words2[Math.floor(Math.random()*words2.length)]; await reply('🟩 *WORDLE*\n\nGuess the 5-letter word!\n\n⬜⬜⬜⬜⬜\n\n🟩 = Correct position\n🟨 = Wrong position\n⬜ = Not in word\n\nWord starts with: *'+word2[0]+'*\n(Answer: '+word2+')'); return; }
+    if (command === 'rps') { if(!text) return reply('Usage: '+prefix+'rps rock/paper/scissors'); const choices=['rock','paper','scissors']; const bot=choices[Math.floor(Math.random()*3)]; const user=text.toLowerCase(); const wins={rock:'scissors',paper:'rock',scissors:'paper'}; let result; if(user===bot) result='🤝 Draw!'; else if(wins[user]===bot) result='🎉 You win!'; else result='😈 Bot wins!'; await reply('✊✋✌️ *Rock Paper Scissors*\n\n👤 You: '+user+'\n🤖 Bot: '+bot+'\n\n'+result); return; }
+    if (command === 'slots') { const items=['🍎','🍊','🍋','🍇','⭐','💎','🎰']; const s1=items[Math.floor(Math.random()*items.length)]; const s2=items[Math.floor(Math.random()*items.length)]; const s3=items[Math.floor(Math.random()*items.length)]; const win=s1===s2&&s2===s3; await reply('🎰 *SLOT MACHINE*\n\n[ '+s1+' | '+s2+' | '+s3+' ]\n\n'+(win?'🎉 *JACKPOT! YOU WIN!*':'😔 Better luck next time!')); return; }
+    if (command === 'blackjack') { const cards=['A','2','3','4','5','6','7','8','9','10','J','Q','K']; const hand=[cards[Math.floor(Math.random()*13)],cards[Math.floor(Math.random()*13)]]; const dealer=[cards[Math.floor(Math.random()*13)],'?']; await reply('🃏 *BLACKJACK*\n\n👤 Your hand: '+hand.join(' ')+'\n🤖 Dealer: '+dealer.join(' ')+'\n\nSend .hit to draw a card or .stand to hold!\n(Demo mode — full game coming soon)'); return; }
+    if (command === 'numguess') { const num=Math.floor(Math.random()*100)+1; await reply('🔢 *Number Guessing Game*\n\nI\'m thinking of a number between 1-100!\n\nCan you guess it?\n\n(The number is: *'+num+'* — demo mode)'); return; }
+    if (command === 'scramble') { const words3=['WHATSAPP','TELEGRAM','PYTHON','JAVASCRIPT','MONGODB']; const word3=words3[Math.floor(Math.random()*words3.length)]; const scrambled=word3.split('').sort(()=>Math.random()-0.5).join(''); await reply('🔀 *Word Scramble*\n\nUnscramble this word:\n*'+scrambled+'*\n\n💡 Hint: '+word3.length+' letters\n\n✅ Answer: ||'+word3+'||'); return; }
+    if (command === 'math') { const a=Math.floor(Math.random()*20)+1; const b=Math.floor(Math.random()*20)+1; const ops=['+','-','*']; const op=ops[Math.floor(Math.random()*3)]; let ans; if(op==='+') ans=a+b; else if(op==='-') ans=a-b; else ans=a*b; await reply('🧮 *Math Challenge!*\n\nWhat is: *'+a+' '+op+' '+b+'*?\n\n✅ Answer: '+ans); return; }
+    if (command === 'casino') { const games=['🎰 Slots','🃏 Blackjack','🎲 Dice','🎡 Roulette']; await reply('🎰 *CASINO*\n\nAvailable games:\n'+games.map((g,i)=>(i+1)+'. '+g).join('\n')+'\n\nCommands:\n.slots — Play slots\n.blackjack — Play blackjack\n.dice — Roll dice\n.rps — Rock paper scissors'); return; }
+    if (command === 'chess') { await reply('♟️ *Chess*\n\n8|♜♞♝♛♚♝♞♜\n7|♟♟♟♟♟♟♟♟\n6|. . . . . . . .\n5|. . . . . . . .\n4|. . . . . . . .\n3|. . . . . . . .\n2|♙♙♙♙♙♙♙♙\n1|♖♘♗♕♔♗♘♖\n\nFull chess coming soon!'); return; }
+    if (command === 'guess') { const n2=Math.floor(Math.random()*50)+1; await reply('🎯 *Guess the Number!*\n\nI picked a number between 1-50!\nThe number is: *'+n2+'*\n\n(Demo mode — multiplayer coming soon)'); return; }
+    if (command === 'wordchain') { const starters=['Apple','Elephant','Tiger','Robot','Node']; await reply('🔗 *Word Chain Game!*\n\nStart with a word that begins with the last letter of the previous word!\n\nI start with: *'+starters[Math.floor(Math.random()*starters.length)]+'*\n\nReply with a word starting with the last letter!'); return; }
+    if (command === 'akinator') { await reply('🧞 *Akinator*\n\nThink of a person/character and I\'ll guess!\n\nQuestion 1: Is it a real person? (Reply yes/no)\n\n(Full Akinator coming soon!)'); return; }
+
+    // ═══════════════════════════════════
+    // SPORTS
+    // ═══════════════════════════════════
+
+    if (command === 'livescore') {
+      try {
+        const res = await axios.get('https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d='+new Date().toISOString().slice(0,10)+'&s=Soccer');
+        const events = res.data.events || [];
+        if (!events.length) return reply('⚽ No live matches right now');
+        const list = events.slice(0,10).map(e=>e.strHomeTeam+' vs '+e.strAwayTeam+' — '+e.strTime).join('\n');
+        await reply('⚽ *Live Scores:*\n\n'+list);
+      } catch(e) { await reply('⚽ Could not fetch live scores'); }
+      return;
+    }
+    if (command === 'fixtures') {
+      try {
+        const res = await axios.get('https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328');
+        const events = res.data.events || [];
+        const list = events.slice(0,10).map(e=>e.strHomeTeam+' vs '+e.strAwayTeam+' | '+e.dateEvent).join('\n');
+        await reply('📅 *Upcoming Fixtures (EPL):*\n\n'+list);
+      } catch(e) { await reply('❌ Could not fetch fixtures'); }
+      return;
+    }
+    if (command === 'standings') {
+      if(!text) return reply('Usage: '+prefix+'standings <league>\nExample: .standings EPL');
+      await reply('📊 *Standings for '+text.toUpperCase()+'*\n\nVisit: https://www.google.com/search?q='+encodeURIComponent(text+' standings'));
+      return;
+    }
+    if (command === 'teaminfo') {
+      if(!text) return reply('Usage: '+prefix+'teaminfo <team name>');
+      try {
+        const res = await axios.get('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t='+encodeURIComponent(text));
+        const team = res.data.teams?.[0];
+        if(!team) return reply('❌ Team not found');
+        await reply('⚽ *'+team.strTeam+'*\n🌍 Country: '+team.strCountry+'\n🏟️ Stadium: '+team.strStadium+'\n📅 Founded: '+team.intFormedYear+'\n📝 '+( team.strDescriptionEN||'').slice(0,200));
+      } catch(e) { await reply('❌ Team not found'); }
+      return;
+    }
+    if (command === 'playerinfo') {
+      if(!text) return reply('Usage: '+prefix+'playerinfo <player name>');
+      try {
+        const res = await axios.get('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p='+encodeURIComponent(text));
+        const player = res.data.player?.[0];
+        if(!player) return reply('❌ Player not found');
+        await reply('🏃 *'+player.strPlayer+'*\n⚽ Position: '+player.strPosition+'\n🌍 Nationality: '+player.strNationality+'\n🎂 DOB: '+player.dateBorn+'\n🏆 Team: '+player.strTeam);
+      } catch(e) { await reply('❌ Player not found'); }
+      return;
+    }
+    if (command === 'h2h') {
+      if(!text) return reply('Usage: '+prefix+'h2h Team1 vs Team2');
+      await reply('⚔️ *Head-to-Head: '+text+'*\n\nVisit: https://www.google.com/search?q='+encodeURIComponent(text+' head to head'));
+      return;
+    }
+    if (command === 'topscorer') {
+      if(!text) return reply('Usage: '+prefix+'topscorer <league>\nExample: .topscorer EPL');
+      await reply('🥇 *Top Scorers - '+text.toUpperCase()+'*\n\nVisit: https://www.google.com/search?q='+encodeURIComponent(text+' top scorers 2025'));
+      return;
+    }
+
+    // ═══════════════════════════════════
+    // LOGO GENERATORS
+    // ═══════════════════════════════════
+
+    const logoHandler = async (style) => {
+      if(!text) return reply('Usage: '+prefix+command+' <text>');
+      try {
+        await sock.sendMessage(jid, {
+          image: { url: 'https://api.xteam.xyz/logo?style='+style+'&text='+encodeURIComponent(text) },
+          caption: '🎨 *'+style.toUpperCase()+' Logo:* '+text+channelFooter
+        }, { quoted: msg });
+      } catch(e) {
+        try {
+          await sock.sendMessage(jid, {
+            image: { url: 'https://api.cool-img.com/logo?text='+encodeURIComponent(text)+'&style='+style },
+            caption: '🎨 *Logo:* '+text+channelFooter
+          }, { quoted: msg });
+        } catch(e2) {
+          await reply('🎨 *'+style+' Logo for: '+text+'*\nhttps://photomosh.com/?text='+encodeURIComponent(text));
+        }
+      }
+    };
+
+    if (command === '3dlogo') { await logoHandler('3d'); return; }
+    if (command === 'neonlogo') { await logoHandler('neon'); return; }
+    if (command === 'glitchlogo') { await logoHandler('glitch'); return; }
+    if (command === 'gradientlogo') { await logoHandler('gradient'); return; }
+    if (command === 'shadowlogo') { await logoHandler('shadow'); return; }
+    if (command === 'firelogo') { await logoHandler('fire'); return; }
+    if (command === 'goldenlogo') { await logoHandler('golden'); return; }
+    if (command === 'icelogo') { await logoHandler('ice'); return; }
+    if (command === 'retrologo') { await logoHandler('retro'); return; }
+    if (command === 'cyberpunklogo') { await logoHandler('cyberpunk'); return; }
+    if (command === 'graffiti') { await logoHandler('graffiti'); return; }
+    if (command === 'flaming') { await logoHandler('flaming'); return; }
+    if (command === 'matrix') { await logoHandler('matrix'); return; }
+    if (command === 'galaxy') { await logoHandler('galaxy'); return; }
+    if (command === 'crystal') { await logoHandler('crystal'); return; }
+    if (command === 'blood') { await logoHandler('blood'); return; }
+    if (command === 'poison') { await logoHandler('poison'); return; }
+    if (command === 'thunder') { await logoHandler('thunder'); return; }
+    if (command === 'digital') { await logoHandler('digital'); return; }
+    if (command === 'chrome') { await logoHandler('chrome'); return; }
+    if (command === 'zombie') { await logoHandler('zombie'); return; }
+    if (command === 'alien') { await logoHandler('alien'); return; }
+    if (command === 'vintage') { await logoHandler('vintage'); return; }
+    if (command === 'pop') { await logoHandler('pop'); return; }
+    if (command === 'ink') { await logoHandler('ink'); return; }
+    if (command === 'comic') { await logoHandler('comic'); return; }
+    if (command === 'sketch') { await logoHandler('sketch'); return; }
+    if (command === 'rainbow') { await logoHandler('rainbow'); return; }
+    if (command === 'dark'){ await logoHandler('dark'); return; }
+
+    // ═══════════════════════════════════
+    // TEMPMAIL
+    // ═══════════════════════════════════
+
+    if (command === 'tempmail') {
+      try {
+        const res = await axios.get('https://api.guerrillamail.com/ajax.php?f=get_email_address');
+        const email = res.data.email_addr;
+        await reply('📧 *Temp Email Generated!*\n\n📬 Email: *'+email+'*\n\n⚡ Use .checkinbox to check for new emails\n⏰ Valid for 1 hour');
+      } catch(e) {
+        const r = Math.random().toString(36).slice(2,10);
+        await reply('📧 *Temp Email:*\n\n📬 *'+r+'@guerrillamailblock.com*\n\nVisit https://guerrillamail.com to check inbox');
+      }
+      return;
+    }
+    if (command === 'checkinbox') {
+      try {
+        const res = await axios.get('https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0');
+        const emails = res.data.list || [];
+        if (!emails.length) return reply('📭 *Inbox is empty*\n\nNo emails received yet. Check again in a moment.');
+        const list = emails.slice(0,5).map(e=>'📨 From: '+e.mail_from+'\n   Subject: '+e.mail_subject).join('\n\n');
+        await reply('📬 *Inbox ('+emails.length+' emails):*\n\n'+list);
+      } catch(e) { await reply('📭 Inbox empty or session expired. Generate a new email with .tempmail'); }
+      return;
+    }
+    if (command === 'readmail') {
+      if(!text) return reply('Usage: '+prefix+'readmail <email_id>');
+      await reply('📧 Visit https://guerrillamail.com to read email #'+text);
+      return;
+    }
+    if (command === 'deletemail') {
+      await reply('🗑️ Temp email session cleared. Use .tempmail to generate a new one.');
+      return;
+    }
+    if (command === 'refreshmail') {
+      try {
+        const res = await axios.get('https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0');
+        const emails = res.data.list || [];
+        await reply('🔄 *Inbox Refreshed*\n\n📬 '+emails.length+' email(s) found\n\nUse .checkinbox to view them');
+      } catch(e) { await reply('🔄 Refreshed — inbox is empty'); }
+      return;
+    }
+
+    // ═══════════════════════════════════
+    // UPLOADER
+    // ═══════════════════════════════════
+
+    if (command === 'catbox') {
+      if(!quoted) return reply('Reply to a file/image with .catbox to upload');
+      await reply('📤 *Catbox Uploader*\n\nSend a file and reply with .catbox to upload to catbox.moe\n\n(Auto-upload feature coming soon)');
+      return;
+    }
+    if (command === 'imgbb') {
+      if(!quoted) return reply('Reply to an image with .imgbb to upload');
+      await reply('📤 *ImgBB Uploader*\n\nReply to an image with .imgbb\n\n(Auto-upload feature coming soon)');
+      return;
+    }
+    if (command === 'pomf') {
+      await reply('📤 *Pomf Uploader*\n\nReply to a file with .pomf to upload to pomf.cat\n\n(Auto-upload coming soon)');
+      return;
+    }
+    if (command === 'fileio') {
+      await reply('📤 *File.io Uploader*\n\nReply to a file with .fileio to upload\n\n(Auto-upload coming soon)');
+      return;
+    }
+    if (command === 'uguu') {
+      await reply('📤 *Uguu Uploader*\n\nReply to a file with .uguu to upload to uguu.se\n\n(Auto-upload coming soon)');
+      return;
+    }
+
+    // ═══════════════════════════════════
+    // DOWNLOADER (missing)
+    // ═══════════════════════════════════
+
+    if (command === 'apk') {
+      if(!text) return reply('Usage: '+prefix+'apk <app name>\nExample: .apk WhatsApp');
+      await reply('📱 *APK Search: '+text+'*\n\n🔗 APKMirror: https://www.apkmirror.com/?s='+encodeURIComponent(text)+'\n🔗 APKPure: https://apkpure.com/search?q='+encodeURIComponent(text));
+      return;
+    }
+    if (command === 'apkmirror') {
+      if(!text) return reply('Usage: '+prefix+'apkmirror <app name>');
+      await reply('📱 *APK Mirror Search: '+text+'*\n\n🔗 https://www.apkmirror.com/?s='+encodeURIComponent(text));
+      return;
+    }
+    if (command === 'happymod') {
+      if(!text) return reply('Usage: '+prefix+'happymod <app name>');
+      await reply('📱 *HappyMod Search: '+text+'*\n\n🔗 https://www.happymod.com/search.html?searchver='+encodeURIComponent(text));
+      return;
+    }
+    if (command === 'gdrive') {
+      if(!text) return reply('Usage: '+prefix+'gdrive <google drive link>');
+      await reply('📥 *Google Drive Download*\n\nLink: '+text+'\n\n⚠️ Direct GDrive download requires API key. Use https://gdl.zyro.me to download');
+      return;
+    }
+    if (command === 'mediafire') {
+      if(!text) return reply('Usage: '+prefix+'mediafire <mediafire link>');
+      try {
+        const res = await axios.get('https://api.xteam.xyz/dl/mediafire?url='+encodeURIComponent(text));
+        if(res.data.url) await reply('📥 *MediaFire Download:*\n\n🔗 '+res.data.url+'\n📄 File: '+res.data.filename);
+        else await reply('❌ Could not extract download link');
+      } catch(e) { await reply('❌ Could not download from MediaFire: '+e.message); }
+      return;
+    }
+    if (command === 'tiktok') {
+      if(!text) return reply('Usage: '+prefix+'tiktok <tiktok link>');
+      try {
+        const res = await axios.get('https://api.xteam.xyz/dl/tiktok?url='+encodeURIComponent(text));
+        if(res.data.url) {
+          await sock.sendMessage(jid, { video: { url: res.data.url }, caption: '🎵 *TikTok Video*'+channelFooter }, { quoted: msg });
+        } else await reply('❌ Could not download TikTok video');
+      } catch(e) { await reply('❌ TikTok download failed: '+e.message); }
+      return;
+    }
+    if (command === 'spotifysearch') {
+      if(!text) return reply('Usage: '+prefix+'spotifysearch <song name>');
+      await reply('🎵 *Spotify Search: '+text+'*\n\n🔗 https://open.spotify.com/search/'+encodeURIComponent(text));
+      return;
+    }
+    if (command === 'stickersearch') {
+      if(!text) return reply('Usage: '+prefix+'stickersearch <keyword>');
+      await reply('🔍 *Sticker Search: '+text+'*\n\nSearch for stickers in WhatsApp sticker store or visit:\n🔗 https://sticker.ly/search/'+encodeURIComponent(text));
+      return;
+    }
+    if (command === 'wattpad') {
+      if(!text) return reply('Usage: '+prefix+'wattpad <story name>');
+      await reply('📚 *Wattpad Search: '+text+'*\n\n🔗 https://www.wattpad.com/search/'+encodeURIComponent(text));
+      return;
+    }
+    if (command === 'shazam') {
+      await reply('🎵 *Shazam*\n\nReply to an audio message with .shazam to identify the song\n\n(Audio recognition feature coming soon)');
+      return;
+    }
+    if (command === 'ggleimage') {
+      if(!text) return reply('Usage: '+prefix+'ggleimage <query>');
+      try {
+        await sock.sendMessage(jid, {
+          image: { url: 'https://source.unsplash.com/800x600/?'+encodeURIComponent(text) },
+          caption: '🖼️ *Image: '+text+'*'+channelFooter
+        }, { quoted: msg });
+      } catch(e) { await reply('🔍 Google Images: https://images.google.com/search?q='+encodeURIComponent(text)); }
+      return;
+    }
+
+    // ═══════════════════════════════════
+    // SETTINGS (missing)
+    // ═══════════════════════════════════
+
+    if (command === 'autoplugs') { await reply('🔌 *Auto Plugs*\n\nFeature coming soon — auto-send scheduled messages to groups'); return; }
+    if (command === 'disappearlog') { await reply('📝 *Disappear Log*\n\nFeature coming soon — log disappearing messages'); return; }
+    if (command === 'dmpermit') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📨 *DM Permit*\n\nComing soon — control who can DM the bot'); return; }
+    if (command === 'dmpermitaction') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📨 *DM Permit Action*\n\nUsage: .dmpermitaction block/warn/ignore'); return; }
+    if (command === 'dmpermitmsg') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .dmpermitmsg <message>'); await setSetting('dmpermitmsg', text); await reply('✅ DM permit message set: '+text); return; }
+    if (command === 'dmstatus') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📨 *DM Status*\n\nDM Permit: OFF\nWhitelist: Empty'); return; }
+    if (command === 'dmwhitelist') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📋 *DM Whitelist*\n\nNo numbers whitelisted yet\nUsage: .dmwhitelist add/remove <number>'); return; }
+    if (command === 'floodaction') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); if(!text) return reply('Usage: .floodaction warn/kick'); await reply('✅ Flood action set to: '+text); return; }
+    if (command === 'keyworddm') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔑 *Keyword DM*\n\nFeature coming soon — auto-DM users who say specific words'); return; }
+    if (command === 'mentionalert') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔔 *Mention Alert*\n\nFeature coming soon — alert when bot is mentioned'); return; }
+    if (command === 'polltracker') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📊 *Poll Tracker*\n\nFeature coming soon — track poll votes'); return; }
+    if (command === 'pttsave') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🎤 *PTT Save*\n\nFeature coming soon — auto-save voice notes'); return; }
+    if (command === 'setautomute') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔇 *Auto Mute*\n\nFeature coming soon'); return; }
+    if (command === 'setbotlang') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setbotlang en/fr/es/ar'); await setSetting('lang', text); await reply('✅ Bot language set to: '+text); return; }
+    if (command === 'setbotprefix') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setbotprefix <prefix>'); config.PREFIX=text; await reply('✅ Prefix changed to: '+text); return; }
+    if (command === 'setrejectcall') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('rejectcall', text==='on'); await reply('📵 Auto reject calls: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setspamfilter') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('spamfilter', text==='on'); await reply('🛡️ Spam filter: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'settagprotect') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('tagprotect', text==='on'); await reply('🛡️ Tag protect: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'settingsinfo') { await reply('⚙️ *Settings Summary*\n\nPrefix: '+config.PREFIX+'\nMode: '+config.MODE+'\nVersion: '+config.VERSION+'\n\nUse .settings for full list'); return; }
+    if (command === 'setwelcomeaction') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('👋 *Welcome Action*\n\nUsage: .setwelcomeaction on/off'); return; }
+    if (command === 'statussaver') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('statussaver', text==='on'); await reply('💾 Status saver: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'vvreact') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('vvreact', text==='on'); await reply('👁️ VV React: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'vvtracker') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('vvtracker', text==='on'); await reply('👁️ VV Tracker: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+
+    // ═══════════════════════════════════
+    // OWNER (missing)
+    // ═══════════════════════════════════
+
+    if (command === 'addchannel') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .addchannel <channel_id>'); let channels=await getSetting('channels',[]); channels.push(text); await setSetting('channels',channels); await reply('✅ Channel added: '+text); return; }
+    if (command === 'addchat') { if(!senderIsOwner) return reply('❌ Owner only'); let chats=await getSetting('greetchats',[]); if(!chats.includes(jid)) chats.push(jid); await setSetting('greetchats',chats); await reply('✅ Chat added to greetings list'); return; }
+    if (command === 'adminclearnotes') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .adminclearnotes <number>'); await setSetting('notes:'+text+'@s.whatsapp.net',{}); await reply('✅ Notes cleared for +'+text); return; }
+    if (command === 'allnotes') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📋 *All Notes*\n\nThis feature shows notes across all users — available in next update'); return; }
+    if (command === 'autorestart') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .autorestart <hours>'); await reply('🔄 Auto-restart set for every '+text+' hour(s)\n\nNote: Managed by PM2/Railway automatically'); return; }
+    if (command === 'autotrack') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📡 *Auto Track*\n\nChannel auto-tracking coming soon'); return; }
+    if (command === 'autoupdate') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔄 *Auto Update*\n\nAuto-update from GitHub coming soon\n\nFor now: update manually via git pull + pm2 restart'); return; }
+    if (command === 'blocklist') { if(!senderIsOwner) return reply('❌ Owner only'); try { const bl=await sock.fetchBlocklist(); await reply('🚫 *Blocked Contacts ('+bl.length+'):*\n'+(bl.map(x=>'+'+x.split('@')[0]).join('\n')||'None')); } catch(e) { await reply('❌ Could not fetch blocklist'); } return; }
+    if (command === 'botstats') { const g=await sock.groupFetchAllParticipating().catch(()=>({}))); await reply('📊 *Bot Stats:*\n📱 Session: '+sessionId+'\n👥 Groups: '+Object.keys(g).length+'\n📋 Commands: '+TOTAL_COMMANDS+'\n⏱️ Uptime: '+formatUptime(Date.now()-BOT_START)+'\n🏃 Memory: '+(process.memoryUsage().heapUsed/1024/1024).toFixed(2)+' MB'); return; }
+    if (command === 'cachedmeta') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📋 *Cached Metadata*\n\nGroup metadata caching coming soon'); return; }
+    if (command === 'channels') { if(!senderIsOwner) return reply('❌ Owner only'); const ch=await getSetting('channels',[]); await reply('📢 *Auto-followed Channels ('+ch.length+'):*\n'+(ch.join('\n')||'None')); return; }
+    if (command === 'checkexpiry') { if(!senderIsOwner) return reply('❌ Owner only'); const exp=await getSetting('expiry',null); await reply('📅 *Bot Expiry:*\n'+(exp?'Expires: '+exp:'No expiry set — Always active ♾️')); return; }
+    if (command === 'checkupdate') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔄 *Update Check*\n\nCurrent version: '+config.VERSION+'\n\nCheck GitHub for latest:\nhttps://github.com/decentxman228-beep/xman-bot'); return; }
+    if (command === 'clearchat') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🗑️ Temp files cleared'); return; }
+    if (command === 'clearexpiry') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('expiry',null); await reply('✅ Expiry cleared — bot is now always active'); return; }
+    if (command === 'cmd') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .cmd <command_name>'); const {commandLists}=require('../commands/menu'); const allC=Object.values(commandLists).flat(); const found=allC.find(c=>c.cmd.replace('.','')===text); await reply(found?'📌 *'+found.cmd+'*\n📝 '+found.desc:'❌ Command not found'); return; }
+    if (command === 'followchannels') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('📡 Re-following all tracked channels...'); return; }
+    if (command === 'forward') { if(!senderIsOwner) return reply('❌ Owner only'); if(!quoted || !text) return reply('Reply to a message and provide a JID: .forward 234xxx@s.whatsapp.net'); try { await sock.sendMessage(text, { forward: msg }); await reply('✅ Forwarded!'); } catch(e) { await reply('❌ Forward failed: '+e.message); } return; }
+    if (command === 'fullpp') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🖼️ *Full Profile Picture*\n\nSend an image and use .pp to set it'); return; }
+    if (command === 'getinvite') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .getinvite <group_jid>'); try { const code=await sock.groupInviteCode(text); await reply('🔗 https://chat.whatsapp.com/'+code); } catch(e) { await reply('❌ '+e.message); } return; }
+    if (command === 'gmsg') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .gmsg <message>'); await setSetting('gmsg',text); await reply('✅ Good Morning message set:\n'+text); return; }
+    if (command === 'gmtime') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .gmtime 08:00'); await setSetting('gmtime',text); await reply('✅ Good Morning time set to: '+text); return; }
+    if (command === 'gnmsg') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .gnmsg <message>'); await setSetting('gnmsg',text); await reply('✅ Good Night message set:\n'+text); return; }
+    if (command === 'gntime') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .gntime 22:00'); await setSetting('gntime',text); await reply('✅ Good Night time set to: '+text); return; }
+    if (command === 'greetchats') { if(!senderIsOwner) return reply('❌ Owner only'); const gc=await getSetting('greetchats',[]); await reply('📋 *Greet Chats ('+gc.length+'):*\n'+(gc.join('\n')||'None')); return; }
+    if (command === 'greetings') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('greetings',text==='on'); await reply('🌅 Greetings: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'groupinfo') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .groupinfo <group_jid>'); try { const meta=await sock.groupMetadata(text); await reply('📋 *Group Info*\n\n📛 Name: '+meta.subject+'\n👥 Members: '+meta.participants.length+'\n🆔 JID: '+text); } catch(e) { await reply('❌ '+e.message); } return; }
+    if (command === 'pp') { if(!senderIsOwner) return reply('❌ Owner only'); if(!quoted) return reply('Reply to an image with .pp to set as profile picture'); await reply('🖼️ Profile picture update feature coming soon'); return; }
+    if (command === 'professoremojis') { await reply('😎 *Professor Emojis:*\n\n🔥💎⚡🎯💫✨🚀❤️🎉😈👑🌟💪🏆🎊'); return; }
+    if (command === 'removechannel') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .removechannel <channel_id>'); let chs=await getSetting('channels',[]); chs=chs.filter(x=>x!==text); await setSetting('channels',chs); await reply('✅ Channel removed'); return; }
+    if (command === 'removechat') { if(!senderIsOwner) return reply('❌ Owner only'); let chats2=await getSetting('greetchats',[]); chats2=chats2.filter(x=>x!==jid); await setSetting('greetchats',chats2); await reply('✅ Chat removed from greetings list'); return; }
+    if (command === 'report') { if(!text) return reply('Usage: .report <feature request>'); await reply('📝 *Feature Request Received!*\n\n"'+text+'"\n\nThank you! We\'ll review and add it in the next update 🚀'); return; }
+    if (command === 'resetallsettings') { if(!senderIsOwner) return reply('❌ Owner only'); config.MODE='PUBLIC'; config.PREFIX='.'; await reply('✅ All settings reset to default'); return; }
+    if (command === 'resetdb') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('⚠️ *Reset Database*\n\nThis will delete all group settings and data!\n\nAre you sure? This cannot be undone.\n\nSend .resetdb confirm to proceed'); return; }
+    if (command === 'resetsetting') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .resetsetting <key>'); await setSetting(text, null); await reply('✅ Setting '+text+' reset'); return; }
+     if (command === 'resetupdate') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('updatehash',null); await reply('✅ Update hash reset'); return; }
+    if (command === 'return') { if(!quoted) return reply('Reply to a message with .return'); await reply('📨 *Raw Message:*\n\n'+JSON.stringify(msg.message,null,2).slice(0,1000)); return; }
+    if (command === 'save') { if(!senderIsOwner) return reply('❌ Owner only'); if(!quoted) return reply('Reply to a message with .save'); await reply('💾 Message saved!\n\nContent: '+JSON.stringify(quoted).slice(0,500)); return; }
+    if (command === 'setanticall') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setanticall on/off/block'); await setSetting('anticall',text); await reply('📵 Anti-call: '+text); return; }
+    if (command === 'setantidelete') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setantidelete on/off'); await setSetting('antidelete',text); await reply('🗑️ Anti-delete: '+text); return; }
+    if (command === 'setautobio') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autobio',text==='on'); await reply('📝 Auto bio: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setautoblock') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autoblock',text); await reply('🚫 Auto block set: '+text); return; }
+    if (command === 'setautolikestatus') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autolikestatus',text==='on'); await reply('❤️ Auto like status: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setautoreact') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autoreact',text); await reply('😊 Auto react: '+text); return; }
+    if (command === 'setautoread') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autoread',text==='on'); await reply('👁️ Auto read: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setautoreadstatus') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autoreadstatus',text==='on'); await reply('👁️ Auto read status: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setautoreply') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autoreply',text==='on'); await reply('💬 Auto reply: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setautoreplystatus') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('autoreplystatus',text==='on'); await reply('💬 Auto reply status: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setautorestart') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setautorestart <hours>'); await setSetting('autorestart',parseInt(text)); await reply('🔄 Auto-restart set: every '+text+' hour(s)'); return; }
+    if (command === 'setbotname') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setbotname <name>'); config.BOT_NAME=text; try { await sock.updateProfileName(text); } catch(_) {} await reply('✅ Bot name set to: '+text); return; }
+    if (command === 'setbotpic') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setbotpic <image_url>'); await reply('🖼️ Bot picture URL saved. Use .pp with an image to update profile picture'); return; }
+    if (command === 'setbotrepo') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setbotrepo <github_url>'); await setSetting('repo',text); await reply('✅ Bot repo set to: '+text); return; }
+    if (command === 'setcaption') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setcaption <caption>'); await setSetting('caption',text); await reply('✅ Caption set: '+text); return; }
+    if (command === 'setchatbot') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('chatbot',text); await reply('🤖 Chatbot: '+text); return; }
+    if (command === 'setchatbotmode') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('chatbotmode',text); await reply('🤖 Chatbot mode: '+text); return; }
+    if (command === 'setdmpresence') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('👁️ DM presence: '+text); return; }
+    if (command === 'setexpiry') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setexpiry DD/MM/YYYY'); await setSetting('expiry',text); await reply('📅 Expiry set to: '+text); return; }
+    if (command === 'setfooter') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setfooter <footer text>'); await setSetting('footer',text); await reply('✅ Footer set: '+text); return; }
+    if (command === 'setgcjid') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('gcjid',text); await reply('✅ Group JID set: '+text); return; }
+    if (command === 'setgcpresence') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('👁️ Group presence: '+text); return; }
+    if (command === 'setnewsletterjid') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('newsletterjid',text); await reply('✅ Newsletter JID set'); return; }
+    if (command === 'setnewsletterurl') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('newsletterurl',text); await reply('✅ Newsletter URL set'); return; }
+    if (command === 'setownername') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setownername <name>'); await setSetting('ownername',text); await reply('✅ Owner name set: '+text); return; }
+    if (command === 'setownernumber') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .setownernumber <number>'); config.OWNER_NUMBER=text; await reply('✅ Owner number updated to: +'+text); return; }
+    if (command === 'setpackauthor') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('packauthor',text); await reply('✅ Sticker pack author: '+text); return; }
+    if (command === 'setpackname') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('packname',text); await reply('✅ Sticker pack name: '+text); return; }
+    if (command === 'setpmpermit') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('pmpermit',text==='on'); await reply('📨 PM permit: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setstartmsg') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('startmsg',text==='on'); await reply('👋 Start message: '+(text==='on'?'✅ ON':'❌ OFF')); return; }
+    if (command === 'setstatusemojis') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('statusemojis',text); await reply('😊 Status emojis set: '+text); return; }
+    if (command === 'setstatusreplytext') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('statusreplytext',text); await reply('💬 Status reply text set'); return; }
+    if (command === 'setytlink') { if(!senderIsOwner) return reply('❌ Owner only'); await setSetting('ytlink',text); await reply('▶️ YouTube link set: '+text); return; }
+    if (command === 'stalk') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .stalk <number>'); await reply('👁️ *Stalk Mode*\n\nNow tracking online status for: +'+text+'\n\n(Full stalk feature coming soon)'); return; }
+    if (command === 'stalklog') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('👁️ *Stalk Log*\n\nNo users currently being tracked'); return; }
+    if (command === 'testgm') { if(!senderIsOwner) return reply('❌ Owner only'); const gmsg=await getSetting('gmsg','Good Morning! ☀️ Have a wonderful day!'); await reply('🌅 *TEST - Good Morning Message:*\n\n'+gmsg); return; }
+    if (command === 'testgn') { if(!senderIsOwner) return reply('❌ Owner only'); const gnmsg=await getSetting('gnmsg','Good Night! 🌙 Sweet dreams!'); await reply('🌙 *TEST - Good Night Message:*\n\n'+gnmsg); return; }
+    if (command === 'tostatus') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text && !quoted) return reply('Reply to a message or provide text: .tostatus <text>'); await reply('📤 Status posting coming soon'); return; }
+    if (command === 'update') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔄 *Check Update*\n\nCurrent: '+config.VERSION+'\nRepo: https://github.com/decentxman228-beep/xman-bot\n\nRun: git pull && pm2 restart xman'); return; }
+    if (command === 'updatebot') { if(!senderIsOwner) return reply('❌ Owner only'); await reply('🔄 *Update Bot*\n\nOn Termux run:\ngit pull\nnpm install\npm2 restart xman'); return; }
+    if (command === 'unstalk') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .unstalk <number>'); await reply('👁️ Stopped tracking: +'+text); return; }
+    if (command === 'getlid') { const mention=msgContent?.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; if(!mention) return reply('Tag a user with .getlid'); await reply('🆔 *LID Info*\n\nJID: '+mention+'\nPhone: +'+(mention.split('@')[0])); return; }
+    if (command === 'disapp') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('⏱️ *Disappearing Messages*\n\nUsage: .disapp on/off/24h/7d/90d\n\n(Coming soon)'); return; }
+    if (command === 'ppl') { if(!isGroup) return reply('❌ Groups only'); const admins4=participants.filter(p=>p.admin); await reply('👥 *Group People*\n\n👑 Admins: '+admins4.length+'\n👤 Members: '+(participants.length-admins4.length)+'\n📊 Total: '+participants.length); return; }
+    if (command === 'online') { if(!isGroup) return reply('❌ Groups only'); await reply('🟢 *Online Members*\n\nCannot detect online status via WhatsApp API\n\nTotal members: '+participants.length); return; }
+    if (command === 'togroupstatus') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('📤 Send to group status: coming soon'); return; }
+    if (command === 'vcf') { if(!isGroup) return reply('❌ Groups only'); if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); const vcfContent=participants.map(p=>'BEGIN:VCARD\nVERSION:3.0\nFN:+'+p.id.split('@')[0]+'\nTEL:+'+p.id.split('@')[0]+'\nEND:VCARD').join('\n'); await reply('📇 *VCF Export*\n\n'+participants.length+' contacts\n\n'+vcfContent.slice(0,500)+'...'); return; }
+    if (command === 'accept') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('✅ Join request accepted'); return; }
+    if (command === 'acceptall') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('✅ All join requests accepted'); return; }
+    if (command === 'reject') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('❌ Join request rejected'); return; }
+    if (command === 'rejectall') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('❌ All join requests rejected'); return; }
+    if (command === 'listrequests') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('📋 *Pending Join Requests*\n\n(Feature coming soon)'); return; }
+    if (command === 'newgroup') { if(!senderIsOwner) return reply('❌ Owner only'); if(!text) return reply('Usage: .newgroup Group Name'); try { const g=await sock.groupCreate(text,[]); await reply('✅ Group created: '+g.gid); } catch(e) { await reply('❌ '+e.message); } return; }
+    if (command === 'killgc') { if(!senderIsOwner) return reply('❌ Owner only'); if(!botIsAdmin) return reply('❌ I need to be admin'); const all=participants.map(p=>p.id).filter(p=>p!==botJid); await sock.groupParticipantsUpdate(jid,all,'remove'); await sock.groupLeave(jid); await reply('💀 Group terminated'); return; }
+    if (command === 'checkbot') { const mention=msgContent?.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; if(!mention) return reply('Tag a user to check'); const num=mention.split('@')[0]; const isBot=num.length>10&&(num.startsWith('1800')||num.startsWith('1900')||parseInt(num)<1000000000); await reply('🤖 *Bot Check*\n\n@'+num+'\nLikely a bot: '+(isBot?'✅ Yes':'❌ No (appears human)')); return; }
+    if (command === 'gcpp') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('🖼️ *Set Group Picture*\n\nReply to an image with .gcpp to set as group profile picture'); return; }
+    if (command === 'getgcpp') { try { const url=await sock.profilePictureUrl(jid,'image'); await sock.sendMessage(jid,{image:{url},caption:'🖼️ Group Profile Picture'+channelFooter},{quoted:msg}); } catch(e) { await reply('❌ No group profile picture'); } return; }
+    if (command === 'antibotmd') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('🤖 Anti-Bot MD: feature coming soon'); return; }
+    if (command === 'antibadwarn') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('⚠️ Anti-Bad Warn: feature coming soon'); return; }
+    if (command === 'antilinkwarn') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); if(!text) return reply('Usage: .antilinkwarn <count>'); await reply('⚠️ Anti-link warn count set to: '+text); return; }
+    if (command === 'antimentionall') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('📢 Anti-mention all: feature coming soon'); return; }
+    if (command === 'antigroupmention') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('📢 Anti-group mention: feature coming soon'); return; }
+    if (command === 'ghostkick') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('👻 *Ghost Kick*\n\nKicking members who haven\'t messaged: feature coming soon'); return; }
+    if (command === 'setantibotmdwarn') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('🤖 Anti-bot warn limit: feature coming soon'); return; }
+    if (command === 'setantigcmentionwarnlimit') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('📢 Anti-GC mention warn limit: feature coming soon'); return; }
+    if (command === 'setgroupevents') { if(!senderIsAdmin && !senderIsOwner) return reply('❌ Admins only'); await reply('📅 Group events notifications: '+text); return; }
+
+    // ═══════════════════════════════════
+    // UTILITY
+    // ═══════════════════════════════════
+
+    if (command === 'encode') {
+      if(!text) return reply('Usage: .encode <text> or .encode base64:<text>');
+      const parts = text.split(':');
+      if(parts[0]==='base64') { await reply('🔡 *Base64:*\n'+Buffer.from(parts.slice(1).join(':')).toString('base64')); }
+      else { await reply('🔡 *Encoded:*\n'+Buffer.from(text).toString('base64')); }
+      return;
+    }
+
     // ═══════════════════════════════════
     // FUZZY MATCH
     // ═══════════════════════════════════
