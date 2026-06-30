@@ -1,0 +1,9 @@
+node_modules/
+sessions/
+auth_info/
+.env
+*.log
+.DS_Store
+fix_pair.js
+fix_db.js
+fix_participants.js

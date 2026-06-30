@@ -1,0 +1,12 @@
+{
+  "name": "xman-bot",
+  "version": "5.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
